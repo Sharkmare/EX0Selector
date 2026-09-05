@@ -1,0 +1,63 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>EX0Selector</RootNamespace>
+    <AssemblyName>EX0Selector</AssemblyName>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>12.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <NoWarn>CS8625;CS8604;CS8601</NoWarn>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <Deterministic>true</Deterministic>
+    <DebugSymbols Condition="'$(Configuration)'=='Release'">false</DebugSymbols>
+    <DebugType Condition="'$(Configuration)'=='Release'">None</DebugType>
+    <CopyToMods Condition="'$(CopyToMods)'==''">true</CopyToMods>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(ResonitePath)'==''">
+    <ResonitePath Condition="Exists('C:\Program Files (x86)\Steam\steamapps\common\Resonite\')">C:\Program Files (x86)\Steam\steamapps\common\Resonite\</ResonitePath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="ResoniteModLoader">
+      <HintPath>$(ResonitePath)Libraries\ResoniteModLoader.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="0Harmony">
+      <HintPath>$(ResonitePath)rml_libs\0Harmony.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="FrooxEngine">
+      <HintPath>$(ResonitePath)FrooxEngine.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Elements.Core">
+      <HintPath>$(ResonitePath)Elements.Core.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Renderite.Shared">
+      <HintPath>$(ResonitePath)Renderite.Shared.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="ProtoFlux.Core">
+      <HintPath>$(ResonitePath)ProtoFlux.Core.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+
+  <Target Name="ClearReferenceCopyLocalPaths" AfterTargets="ResolveAssemblyReferences">
+    <ItemGroup>
+      <ReferenceCopyLocalPaths Remove="@(ReferenceCopyLocalPaths)" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent" Condition="'$(CopyToMods)'=='true'">
+    <Message Text="Copying $(TargetFileName) &#x2192; $(ResonitePath)rml_mods\" Importance="high" />
+    <Exec Command="copy /Y &quot;$(TargetPath)&quot; &quot;$(ResonitePath)rml_mods\$(TargetFileName)&quot;"
+          IgnoreExitCode="true" ConsoleToMSBuild="true">
+      <Output TaskParameter="ExitCode" PropertyName="_CopyExitCode" />
+    </Exec>
+    <Message Condition="'$(_CopyExitCode)'=='0'" Text="Deployed." Importance="high" />
+    <Message Condition="'$(_CopyExitCode)'!='0'" Text="DLL locked &#x2014; deploy manually after closing Resonite." Importance="high" />
+  </Target>
+</Project>
