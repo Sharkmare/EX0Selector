@@ -313,6 +313,7 @@ internal static class SelectorPatches
     private const float RESULT_HEIGHT = 46f;
     private const float COLUMN_GAP = 8f;
     private const long RECENT_ORDER_BASE = -100000L;
+    private const float PICK_DOUBLE_PRESS_DELAY = 0.35f;
     private const float PANEL_SIDE_PADDING = 32f;
     private const string DIM_HEX = RadiantUI_Constants.Neutrals.MIDLIGHT_HEX;
     private const string LIGHT_HEX = RadiantUI_Constants.Neutrals.LIGHT_HEX;
@@ -800,10 +801,10 @@ internal static class SelectorPatches
                 label += $"\n<size=70%><color={DIM_HEX}>{NoParse(where)}</color></size>";
 
                 bool generic = entry.Type.IsGenericTypeDefinition;
-                var button = ui.Button((LocaleString)label, generic ? RadiantUI_Constants.Sub.GREEN : RadiantUI_Constants.Sub.CYAN);
-                button.Slot.OrderOffset = order++;
                 var captured = entry;
-                button.LocalPressed += (_, _) => PickSearchHit(selector, state, captured);
+                var button = PickButton(ui, (LocaleString)label, generic ? RadiantUI_Constants.Sub.GREEN : RadiantUI_Constants.Sub.CYAN,
+                    () => PickSearchHit(selector, state, captured));
+                button.Slot.OrderOffset = order++;
             }
             ui.Style.MinHeight = ROW_HEIGHT;
         }
@@ -854,9 +855,7 @@ internal static class SelectorPatches
             column.Items[key] = (generic, RadiantUI_Constants.Sub.GREEN, generic.BaseColor.Value);
             return generic;
         }
-        var button = ui.Button((LocaleString)NoParse(type.GetNiceName()), RadiantUI_Constants.Sub.CYAN);
-        button.LocalPressed += (_, _) => Select(selector, type);
-        return button;
+        return PickButton(ui, (LocaleString)NoParse(type.GetNiceName()), RadiantUI_Constants.Sub.CYAN, () => Select(selector, type));
     }
 
     private static void RenderRecent(ComponentSelector selector, Column column, UIBuilder ui)
@@ -887,6 +886,15 @@ internal static class SelectorPatches
             if (column.Selected != null && column.Items.TryGetValue(column.Selected, out var item))
                 item.button.BaseColor.Value = Highlight(item.tint);
         }
+    }
+
+    private static Button PickButton(UIBuilder ui, LocaleString label, colorX tint, Action action)
+    {
+        var button = ui.Button(in label, tint);
+        var relay = button.Slot.AttachComponent<ButtonRelay>();
+        relay.DoublePressDelay.Value = PICK_DOUBLE_PRESS_DELAY;
+        relay.LocalPressed += (_, _) => action();
+        return button;
     }
 
     private static void Select(ComponentSelector selector, Type type)
